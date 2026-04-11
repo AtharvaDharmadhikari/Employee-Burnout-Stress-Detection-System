@@ -1,0 +1,46 @@
+# Virtual environment
+venv/
+.env
+.venv/
+
+# Model file (large binary — store separately e.g. Google Drive / HuggingFace)
+*.keras
+*.h5
+
+# Database (runtime data, not source code)
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE / editor
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Logs
+*.log
+logs/
+
+# Streamlit cache
+.streamlit/
+
+# Project docs/notes (not needed in repo)
+*.pdf
+*.txt
