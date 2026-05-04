@@ -44,3 +44,21 @@ logs/
 # Project docs/notes (not needed in repo)
 *.pdf
 *.txt
+
+# Generated documents
+*.docx
+*.zip
+*.tex
+project_report.tex
+project_report.zip
+
+# Presentation files
+presentation/
+
+# Document generation scripts
+generate_draft_pdf.py
+generate_offer_letter.py
+generate_report.py
+
+# Logo / media
+logo.jpeg

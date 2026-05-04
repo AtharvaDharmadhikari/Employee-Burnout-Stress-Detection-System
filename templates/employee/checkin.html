@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}Attendance Check-In{% endblock %}
+{% block head %}
+<style>
+  .tab-pane { padding-top: 20px; }
+  canvas { display: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>📸 Attendance Check-In</h1>
+  <p>{{ user.name }} · {{ today }} · Mood captured automatically via camera</p>
+</div>
+
+<!-- Status banner -->
+{% if attendance and attendance.check_out_time %}
+  <div class="alert alert-success d-flex gap-3 align-items-center mb-4" style="border-radius:12px">
+    <i class="bi bi-check-circle-fill fs-4"></i>
+    <div>
+      <strong>Attendance complete for today.</strong>
+      Checked in at <strong>{{ attendance.check_in_time }}</strong> ({{ attendance.entry_mood }}) ·
+      Checked out at <strong>{{ attendance.check_out_time }}</strong> ({{ attendance.exit_mood }}).
+      See you tomorrow!
+    </div>
+  </div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-lg-7">
+
+    {% if not attendance %}
+    <!-- ── MORNING ENTRY ──────────────────────────────────────────────────── -->
+    <div class="form-section">
+      <h5 class="mb-1">🌅 Morning Entry</h5>
+      <p class="text-muted mb-4" style="font-size:0.85rem">Capture your mood to mark attendance for today.</p>
+
+      <ul class="nav nav-tabs" id="checkinTabs">
+        <li class="nav-item">
+          <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#webcamIn">
+            <i class="bi bi-camera me-1"></i> Webcam
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#manualIn">
+            <i class="bi bi-pencil me-1"></i> Manual
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+        <!-- Webcam tab -->
+        <div class="tab-pane fade show active" id="webcamIn">
+          <div class="webcam-container mb-3">
+            <video id="videoIn" autoplay muted playsinline></video>
+            <canvas id="canvasIn"></canvas>
+            <div class="webcam-overlay">
+              <button id="captureBtnIn" onclick="captureAndDetect('videoIn','canvasIn','checkin')"
+                      class="btn-primary-custom">
+                <i class="bi bi-camera"></i> Capture & Detect Mood
+              </button>
+            </div>
+          </div>
+          <div id="detectionResult" style="display:none"></div>
+        </div>
+
+        <!-- Manual tab -->
+        <div class="tab-pane fade" id="manualIn">
+          <form method="POST" action="{{ url_for('api_checkin_manual') }}">
+            <input type="hidden" name="action" value="checkin">
+            <div class="mb-3">
+              <label class="form-label">How are you feeling?</label>
+              <select name="mood" class="form-select">
+                {% for m in mood_options %}
+                  <option>{{ m }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-4">
+              <label class="form-label">Stress Level: <span id="stressValIn">4</span>/10</label>
+              <input type="range" name="stress" min="0" max="10" value="4" class="form-range"
+                     oninput="document.getElementById('stressValIn').textContent=this.value">
+            </div>
+            <button type="submit" class="btn-primary-custom w-100">
+              <i class="bi bi-check-circle me-1"></i> Check In
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    {% elif not attendance.check_out_time %}
+    <!-- ── ALREADY CHECKED IN — SHOW CHECK-OUT ──────────────────────────── -->
+    <div class="alert alert-success d-flex gap-2 align-items-center mb-4" style="border-radius:12px">
+      <i class="bi bi-check-circle-fill"></i>
+      Checked in at <strong>{{ attendance.check_in_time }}</strong> — Entry mood: <strong>{{ attendance.entry_mood }}</strong>
+    </div>
+
+    <div class="form-section">
+      <h5 class="mb-1">🌆 Evening Exit</h5>
+      <p class="text-muted mb-4" style="font-size:0.85rem">Capture your end-of-day mood to complete attendance.</p>
+
+      <ul class="nav nav-tabs" id="checkoutTabs">
+        <li class="nav-item">
+          <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#webcamOut">
+            <i class="bi bi-camera me-1"></i> Webcam
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#manualOut">
+            <i class="bi bi-pencil me-1"></i> Manual
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+        <div class="tab-pane fade show active" id="webcamOut">
+          <div class="webcam-container mb-3">
+            <video id="videoOut" autoplay muted playsinline></video>
+            <canvas id="canvasOut"></canvas>
+            <div class="webcam-overlay">
+              <button id="captureBtnOut" onclick="captureAndDetect('videoOut','canvasOut','checkout')"
+                      class="btn-primary-custom">
+                <i class="bi bi-camera"></i> Capture & Detect Mood
+              </button>
+            </div>
+          </div>
+          <div id="detectionResult" style="display:none"></div>
+        </div>
+
+        <div class="tab-pane fade" id="manualOut">
+          <form method="POST" action="{{ url_for('api_checkin_manual') }}">
+            <input type="hidden" name="action" value="checkout">
+            <div class="mb-3">
+              <label class="form-label">End-of-day mood</label>
+              <select name="mood" class="form-select">
+                {% for m in mood_options %}
+                  <option>{{ m }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-4">
+              <label class="form-label">Stress Level: <span id="stressValOut">4</span>/10</label>
+              <input type="range" name="stress" min="0" max="10" value="4" class="form-range"
+                     oninput="document.getElementById('stressValOut').textContent=this.value">
+            </div>
+            <button type="submit" class="btn-primary-custom w-100">
+              <i class="bi bi-door-closed me-1"></i> Check Out
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Attendance history -->
+  <div class="col-lg-5">
+    <div class="chart-card">
+      <div class="chart-title"><i class="bi bi-calendar3 me-2"></i>Attendance History (Last 14 Days)</div>
+      {% if history %}
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Date</th><th>In</th><th>Out</th><th>Mood</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in history %}
+            <tr>
+              <td style="white-space:nowrap">{{ row.date }}</td>
+              <td>{{ row.check_in_time or "—" }}</td>
+              <td>{{ row.check_out_time or "—" }}</td>
+              <td>
+                <span class="badge"
+                  style="background:{% if row.entry_mood in ['Happy','Calm'] %}#d1fae5;color:#065f46
+                         {% elif row.entry_mood in ['Stressed','Angry'] %}#fee2e2;color:#991b1b
+                         {% else %}#dbeafe;color:#1e40af{% endif %}">
+                  {{ row.entry_mood or "—" }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <p class="text-muted text-center py-3" style="font-size:0.85rem">No attendance records yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/webcam.js') }}"></script>
+{% endblock %}

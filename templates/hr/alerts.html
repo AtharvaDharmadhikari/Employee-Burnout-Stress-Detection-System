@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}HR Alerts{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>🔔 HR Stress Alerts</h1>
+  <p>Monitor and acknowledge employee stress events</p>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" id="alertTabs">
+  <li class="nav-item">
+    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#unreadTab">
+      🔴 Unread
+      {% if unread %}
+        <span class="badge bg-danger ms-1" style="font-size:0.7rem">{{ unread | length }}</span>
+      {% endif %}
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#allTab">
+      📋 All Alerts
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content">
+
+  <!-- Unread alerts -->
+  <div class="tab-pane fade show active" id="unreadTab">
+    {% if not unread %}
+      <div class="chart-card text-center py-5">
+        <i class="bi bi-check-circle" style="font-size:3rem;color:#10b981;opacity:0.6"></i>
+        <h5 class="mt-3" style="color:#10b981">All clear!</h5>
+        <p class="text-muted" style="font-size:0.88rem">No unread alerts — the team appears to be doing well.</p>
+      </div>
+    {% else %}
+      <p class="text-muted mb-3" style="font-size:0.85rem">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        {{ unread | length }} alert(s) require attention.
+      </p>
+      {% for alert in unread %}
+      <div class="alert-card {{ alert.alert_type }}">
+        <div class="d-flex justify-content-between align-items-start">
+          <div style="flex:1">
+            <div class="alert-card-title">
+              {% if alert.alert_type == 'stress' %}🔴
+              {% elif alert.alert_type == 'burnout' %}🟠
+              {% else %}🟡{% endif %}
+              {{ alert.alert_type.upper() }} ALERT
+            </div>
+            <div class="alert-card-body mt-1">
+              <strong>{{ alert.employee_name }}</strong> · {{ alert.department }}
+            </div>
+            <div class="alert-card-body">{{ alert.message }}</div>
+            <div class="alert-card-meta">
+              <i class="bi bi-clock me-1"></i>{{ alert.created_at[:16] }}
+            </div>
+          </div>
+          <form method="POST" action="{{ url_for('hr_acknowledge', alert_id=alert.id) }}" class="ms-3">
+            <button type="submit" class="btn-outline-custom" style="font-size:0.82rem;padding:6px 16px">
+              <i class="bi bi-check2 me-1"></i>Acknowledge
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <!-- All alerts -->
+  <div class="tab-pane fade" id="allTab">
+    {% if alert_chart %}
+    <div class="chart-card mb-4">
+      <div class="chart-title"><i class="bi bi-bar-chart me-2"></i>Alert Type Distribution</div>
+      {{ alert_chart | safe }}
+    </div>
+    {% endif %}
+
+    {% if all_alerts %}
+    <div class="table-card">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr><th>Date</th><th>Employee</th><th>Department</th><th>Type</th><th>Stress</th><th>Message</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for a in all_alerts %}
+            <tr>
+              <td style="white-space:nowrap">{{ a.created_at[:16] }}</td>
+              <td><strong>{{ a.employee_name }}</strong></td>
+              <td>{{ a.department }}</td>
+              <td>
+                <span class="badge"
+                  style="background:{% if a.alert_type == 'stress' %}#fee2e2;color:#991b1b
+                         {% elif a.alert_type == 'burnout' %}#ffedd5;color:#9a3412
+                         {% else %}#fef9c3;color:#854d0e{% endif %}">
+                  {{ a.alert_type }}
+                </span>
+              </td>
+              <td>
+                <span style="font-weight:600;color:{% if a.stress_level >= 7 %}#ef4444{% else %}#f59e0b{% endif %}">
+                  {{ a.stress_level }}/10
+                </span>
+              </td>
+              <td style="max-width:260px;font-size:0.82rem">{{ a.message }}</td>
+              <td>
+                {% if a.acknowledged %}
+                  <span class="badge status-out">✅ Done</span>
+                {% else %}
+                  <span class="badge status-miss">🔴 Unread</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+      <p class="text-muted text-center py-4">No alerts recorded yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

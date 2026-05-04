@@ -7,7 +7,7 @@ Returns data structures ready for Plotly/Streamlit charts.
 from __future__ import annotations
 from collections import Counter
 import pandas as pd
-from database import get_all_mood_logs, get_all_employees
+from database import get_all_mood_logs, get_all_users
 
 
 # ── Data loading ──────────────────────────────────────────────────────────────

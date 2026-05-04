@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}WellnessAI{% endblock %} — Burnout Detection</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<div class="d-flex">
+
+  <!-- ── Sidebar ──────────────────────────────────────────────────────────── -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">🧠</div>
+      <div>
+        <div class="sidebar-brand">WellnessAI</div>
+        <div class="sidebar-sub">Burnout Detection</div>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">{{ current_user.name[0].upper() }}</div>
+      <div>
+        <div class="sidebar-name">{{ current_user.name }}</div>
+        <div class="sidebar-dept">
+          {% if current_user.role == 'hr' %}
+            <span class="badge" style="background:rgba(245,158,11,0.25);color:#fbbf24;font-size:0.7rem">HR Manager</span>
+          {% else %}
+            <span class="badge" style="background:rgba(99,102,241,0.25);color:#a5b4fc;font-size:0.7rem">Employee</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <ul class="sidebar-nav">
+      {% if current_user.role == 'hr' %}
+        <li>
+          <a href="{{ url_for('hr_dashboard') }}"
+             class="sidebar-link {% if request.endpoint == 'hr_dashboard' %}active{% endif %}">
+            <i class="bi bi-speedometer2"></i> Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('hr_attendance') }}"
+             class="sidebar-link {% if request.endpoint == 'hr_attendance' %}active{% endif %}">
+            <i class="bi bi-calendar-check"></i> Today's Attendance
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('hr_alerts') }}"
+             class="sidebar-link {% if request.endpoint == 'hr_alerts' %}active{% endif %}">
+            <i class="bi bi-bell"></i> HR Alerts
+            {% if unread_alerts_count > 0 %}
+              <span class="badge bg-danger ms-auto" style="font-size:0.7rem">{{ unread_alerts_count }}</span>
+            {% endif %}
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('hr_employees') }}"
+             class="sidebar-link {% if request.endpoint == 'hr_employees' %}active{% endif %}">
+            <i class="bi bi-people"></i> Employees
+          </a>
+        </li>
+      {% else %}
+        <li>
+          <a href="{{ url_for('employee_dashboard') }}"
+             class="sidebar-link {% if request.endpoint == 'employee_dashboard' %}active{% endif %}">
+            <i class="bi bi-house"></i> My Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('checkin_page') }}"
+             class="sidebar-link {% if request.endpoint == 'checkin_page' %}active{% endif %}">
+            <i class="bi bi-camera"></i> Attendance Check-In
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('tasks_page') }}"
+             class="sidebar-link {% if request.endpoint == 'tasks_page' %}active{% endif %}">
+            <i class="bi bi-check2-circle"></i> Task Manager
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('wellness_page') }}"
+             class="sidebar-link {% if request.endpoint == 'wellness_page' %}active{% endif %}">
+            <i class="bi bi-heart-pulse"></i> My Wellness Report
+          </a>
+        </li>
+      {% endif %}
+    </ul>
+
+    <div class="sidebar-footer">
+      <a href="{{ url_for('logout') }}" class="sidebar-logout">
+        <i class="bi bi-box-arrow-left"></i> Logout
+      </a>
+    </div>
+  </nav>
+
+  <!-- ── Main content ──────────────────────────────────────────────────────── -->
+  <div id="main-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

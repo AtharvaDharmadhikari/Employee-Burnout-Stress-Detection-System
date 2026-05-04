@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}HR Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>🏠 HR Dashboard</h1>
+  <p>Team wellness overview and burnout risk monitoring</p>
+</div>
+
+<!-- Top stats -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card purple">
+      <div class="stat-label"><i class="bi bi-people me-1"></i>Total Employees</div>
+      <div class="stat-value">{{ employees | length }}</div>
+      <div class="stat-sub">Registered</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card green">
+      <div class="stat-label"><i class="bi bi-bar-chart me-1"></i>Total Check-Ins</div>
+      <div class="stat-value">{{ morale.total_logs }}</div>
+      <div class="stat-sub">All time</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card {% if morale.score >= 75 %}green{% elif morale.score >= 50 %}orange{% else %}red{% endif %}">
+      <div class="stat-label"><i class="bi bi-heart me-1"></i>Team Morale</div>
+      <div class="stat-value">{{ morale.score }}/100</div>
+      <div class="stat-sub">{{ morale.label }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card {% if alerts | length > 0 %}red{% else %}green{% endif %}">
+      <div class="stat-label"><i class="bi bi-bell me-1"></i>Unread Alerts</div>
+      <div class="stat-value">{{ alerts | length }}</div>
+      <div class="stat-sub">
+        {% if alerts | length > 0 %}
+          <a href="{{ url_for('hr_alerts') }}" style="color:inherit">View alerts →</a>
+        {% else %}All clear{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if meta %}
+<div class="alert mb-4" style="background:#ede9fe;border:none;border-left:4px solid #7c3aed;border-radius:12px;color:#4c1d95">
+  <i class="bi bi-robot me-2"></i>
+  <strong>ML-Powered Burnout Scoring</strong> — GradientBoostingRegressor trained on
+  {{ "{:,}".format(meta.training_rows) }} real employee records ·
+  R² = {{ meta.r2 }} · MAE = {{ meta.mae }} ·
+  Scoring: 60% ML + 40% behavioural formula
+</div>
+{% endif %}
+
+<!-- Morale gauge + mood distribution -->
+{% if gauge_chart or pie_chart %}
+<div class="row g-4 mb-4">
+  {% if gauge_chart %}
+  <div class="col-md-5">
+    <div class="chart-card">
+      <div class="chart-title"><i class="bi bi-speedometer me-2"></i>Team Morale Score</div>
+      {{ gauge_chart | safe }}
+    </div>
+  </div>
+  {% endif %}
+  {% if pie_chart %}
+  <div class="col-md-7">
+    <div class="chart-card">
+      <div class="chart-title"><i class="bi bi-pie-chart me-2"></i>Mood Distribution (Last 7 Days)</div>
+      {{ pie_chart | safe }}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Stress trend + employee ranking -->
+{% if stress_chart or ranking_chart %}
+<div class="row g-4 mb-4">
+  {% if stress_chart %}
+  <div class="col-md-6">
+    <div class="chart-card">
+      <div class="chart-title"><i class="bi bi-graph-up me-2"></i>Daily Stress Trend</div>
+      {{ stress_chart | safe }}
+    </div>
+  </div>
+  {% endif %}
+  {% if ranking_chart %}
+  <div class="col-md-6">
+    <div class="chart-card">
+      <div class="chart-title"><i class="bi bi-trophy me-2"></i>Employee Stress Ranking</div>
+      {{ ranking_chart | safe }}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Burnout risk chart -->
+{% if risk_chart %}
+<div class="chart-card mb-4">
+  <div class="chart-title"><i class="bi bi-fire me-2"></i>Burnout Risk Overview</div>
+  {% set critical = risk_data | selectattr("score", "ge", 75) | list %}
+  {% set high = risk_data | selectattr("score", "ge", 50) | rejectattr("score", "ge", 75) | list %}
+  {% if critical %}
+    <div class="alert alert-danger py-2 mb-3" style="font-size:0.85rem;border-radius:8px">
+      ⚠️ <strong>{{ critical | length }} employee(s) at Critical Risk</strong> — immediate attention needed
+    </div>
+  {% endif %}
+  {% if high %}
+    <div class="alert alert-warning py-2 mb-3" style="font-size:0.85rem;border-radius:8px">
+      🟠 <strong>{{ high | length }} employee(s) at High Risk</strong>
+    </div>
+  {% endif %}
+  {{ risk_chart | safe }}
+</div>
+{% endif %}
+
+<!-- Department summary -->
+{% if dept %}
+<div class="chart-card">
+  <div class="chart-title"><i class="bi bi-building me-2"></i>Department Summary</div>
+  <div class="table-responsive">
+    <table class="table table-sm">
+      <thead>
+        <tr><th>Department</th><th>Avg Stress</th><th>Check-Ins</th><th>Dominant Mood</th></tr>
+      </thead>
+      <tbody>
+        {% for row in dept %}
+        <tr>
+          <td><strong>{{ row.department }}</strong></td>
+          <td>
+            <span style="font-weight:600;color:{% if row.avg_stress >= 7 %}#ef4444{% elif row.avg_stress >= 5 %}#f59e0b{% else %}#10b981{% endif %}">
+              {{ row.avg_stress }}/10
+            </span>
+          </td>
+          <td>{{ row.total_entries }}</td>
+          <td>{{ row.dominant_mood }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if not gauge_chart and not stress_chart %}
+<div class="chart-card text-center py-5">
+  <i class="bi bi-bar-chart" style="font-size:3rem;opacity:0.2"></i>
+  <h5 class="mt-3 text-muted">No mood data yet</h5>
+  <p class="text-muted" style="font-size:0.88rem">Employees need to complete check-ins for data to appear here.</p>
+</div>
+{% endif %}
+{% endblock %}

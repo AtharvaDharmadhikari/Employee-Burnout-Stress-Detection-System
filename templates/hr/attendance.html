@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Today's Attendance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>📅 Today's Attendance</h1>
+  <p>{{ today }}</p>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card green">
+      <div class="stat-label"><i class="bi bi-check-circle me-1"></i>Checked In</div>
+      <div class="stat-value">{{ today_att | length }}</div>
+      <div class="stat-sub">Present today</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card red">
+      <div class="stat-label"><i class="bi bi-x-circle me-1"></i>Not Checked In</div>
+      <div class="stat-value">{{ absent | length }}</div>
+      <div class="stat-sub">Absent / not yet</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card purple">
+      <div class="stat-label"><i class="bi bi-people me-1"></i>Total Employees</div>
+      <div class="stat-value">{{ today_att | length + absent | length }}</div>
+      <div class="stat-sub">Registered</div>
+    </div>
+  </div>
+</div>
+
+<!-- Present today -->
+{% if today_att %}
+<div class="chart-card mb-4">
+  <div class="chart-title"><i class="bi bi-check2-circle me-2" style="color:#10b981"></i>Present Today</div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Employee</th><th>Department</th>
+          <th>Check-In</th><th>Check-Out</th>
+          <th>Entry Mood</th><th>Entry Stress</th>
+          <th>Exit Mood</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in today_att %}
+        <tr>
+          <td><strong>{{ row.name }}</strong></td>
+          <td>{{ row.department }}</td>
+          <td>{{ row.check_in_time or "—" }}</td>
+          <td>{{ row.check_out_time or "—" }}</td>
+          <td>
+            <span class="badge"
+              style="background:{% if row.entry_mood in ['Happy','Calm'] %}#d1fae5;color:#065f46
+                     {% elif row.entry_mood in ['Stressed','Angry'] %}#fee2e2;color:#991b1b
+                     {% else %}#dbeafe;color:#1e40af{% endif %}">
+              {{ row.entry_mood or "—" }}
+            </span>
+          </td>
+          <td>
+            {% if row.entry_stress %}
+              <span style="font-weight:600;color:{% if row.entry_stress >= 7 %}#ef4444{% elif row.entry_stress >= 5 %}#f59e0b{% else %}#10b981{% endif %}">
+                {{ row.entry_stress }}/10
+              </span>
+            {% else %}—{% endif %}
+          </td>
+          <td>{{ row.exit_mood or "—" }}</td>
+          <td>
+            {% if row.check_out_time %}
+              <span class="badge status-out">✅ Checked Out</span>
+            {% else %}
+              <span class="badge status-in">🏢 In Office</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Absent today -->
+{% if absent %}
+<div class="chart-card">
+  <div class="chart-title"><i class="bi bi-exclamation-circle me-2" style="color:#ef4444"></i>Not Checked In Today</div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr><th>Employee ID</th><th>Name</th><th>Department</th></tr>
+      </thead>
+      <tbody>
+        {% for emp in absent %}
+        <tr>
+          <td><span class="badge bg-light text-secondary">{{ emp.employee_id }}</span></td>
+          <td><strong>{{ emp.name }}</strong></td>
+          <td>{{ emp.department }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if not today_att and not absent %}
+<div class="chart-card text-center py-5">
+  <i class="bi bi-calendar-x" style="font-size:3rem;opacity:0.2"></i>
+  <h5 class="mt-3 text-muted">No employees registered yet</h5>
+</div>
+{% endif %}
+{% endblock %}
